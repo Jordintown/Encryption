@@ -24,7 +24,7 @@ def encrypt_file(file_path, progress, time_remaining):
     # Encrypted title: converting original filename to hex
     encrypted_title = bytes_to_hex(os.path.basename(file_path).encode('utf-8'))
     
-    encrypted_file_path = os.path.join(os.path.dirname(file_path), f'{encrypted_title}.txt')
+    encrypted_file_path = os.path.join(os.path.dirname(file_path), f'{encrypted_title}.dmecyp')
     
     with open(encrypted_file_path, 'w') as encrypted_file:
         encrypted_file.write(hex_data)
