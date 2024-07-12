@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "DME encryption system"
-#define MyAppVersion "Beta 2"
+#define MyAppVersion "v1.1"
 #define MyAppPublisher "Mr. DME"
 #define MyAppURL "https://github.com/Jordintown/Encryption"
 #define MyAppExeName "cypher.exe"
