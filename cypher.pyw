@@ -4,6 +4,7 @@ from tkinter import ttk
 import time
 import os
 import threading
+import sys
 
 # Function to convert bytes to hex
 def bytes_to_hex(byte_array):
@@ -109,6 +110,12 @@ def process_file(file_path, operation, progress, time_remaining):
     elif operation == 'decrypt':
         decrypt_file(file_path, progress, time_remaining)
 
+def process_direct_file(file_path):
+    if file_path.endswith(".dmecyp"):
+        decrypt_file(file_path, progress, time_remaining)
+    else:
+        encrypt_file(file_path, progress, time_remaining)
+
 # Create the main window
 root = tk.Tk()
 root.title("File Encrypter/Decrypter")
@@ -125,6 +132,14 @@ select_encrypt_button.pack(pady=10)
 select_decrypt_button.pack(pady=10)
 progress.pack(pady=10)
 time_remaining_label.pack(pady=10)
+
+# Check for direct file processing
+if len(sys.argv) > 1:
+    file_path = sys.argv[1]
+    progress['value'] = 0
+    time_remaining.set("Time remaining: calculating...")
+    thread = threading.Thread(target=process_direct_file, args=(file_path,))
+    thread.start()
 
 # Run the application
 root.mainloop()
