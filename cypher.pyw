@@ -3,6 +3,7 @@ from tkinter import filedialog, messagebox
 from tkinter import ttk
 import time
 import os
+import threading
 
 # Function to convert bytes to hex
 def bytes_to_hex(byte_array):
@@ -14,46 +15,51 @@ def hex_to_bytes(hex_str):
 
 # Function to encrypt file
 def encrypt_file(file_path, progress, time_remaining):
+    chunk_size = 1024 * 1024  # 1MB
     start_time = time.time()
     
+    file_size = os.path.getsize(file_path)
+    processed_size = 0
+
     with open(file_path, 'rb') as file:
-        file_bytes = file.read()
-    
-    hex_data = bytes_to_hex(file_bytes)
-    
-    # Encrypted title: converting original filename to hex
-    encrypted_title = bytes_to_hex(os.path.basename(file_path).encode('utf-8'))
-    
-    encrypted_file_path = os.path.join(os.path.dirname(file_path), f'{encrypted_title}.dmecyp')
-    
-    with open(encrypted_file_path, 'w') as encrypted_file:
-        encrypted_file.write(hex_data)
+        encrypted_title = bytes_to_hex(os.path.basename(file_path).encode('utf-8'))
+        encrypted_file_path = os.path.join(os.path.dirname(file_path), f'{encrypted_title}.dmecyp')
+        
+        with open(encrypted_file_path, 'w') as encrypted_file:
+            while chunk := file.read(chunk_size):
+                hex_data = bytes_to_hex(chunk)
+                encrypted_file.write(hex_data)
+                processed_size += len(chunk)
+                progress['value'] = (processed_size / file_size) * 100
+                root.update_idletasks()
     
     elapsed_time = time.time() - start_time
-    progress['value'] = 100
-    time_remaining.set(f"Time remaining: {elapsed_time:.2f} seconds")
+    time_remaining.set(f"Time elapsed: {elapsed_time:.2f} seconds")
     messagebox.showinfo("Done", "File encrypted successfully!")
 
 # Function to decrypt file
 def decrypt_file(file_path, progress, time_remaining):
+    chunk_size = 2 * 1024 * 1024  # 2MB because each byte is represented by 2 hex characters
     start_time = time.time()
     
+    file_size = os.path.getsize(file_path)
+    processed_size = 0
+
     with open(file_path, 'r') as file:
-        hex_data = file.read()
-    
-    file_bytes = hex_to_bytes(hex_data)
-    
-    # Decrypted title: converting hex to original filename
-    decrypted_title = hex_to_bytes(os.path.basename(file_path).split('.')[0]).decode('utf-8')
-    
-    decrypted_file_path = os.path.join(os.path.dirname(file_path), decrypted_title)
-    
-    with open(decrypted_file_path, 'wb') as decrypted_file:
-        decrypted_file.write(file_bytes)
+        encrypted_title = os.path.basename(file_path).split('.')[0]
+        decrypted_title = hex_to_bytes(encrypted_title).decode('utf-8')
+        decrypted_file_path = os.path.join(os.path.dirname(file_path), decrypted_title)
+        
+        with open(decrypted_file_path, 'wb') as decrypted_file:
+            while chunk := file.read(chunk_size):
+                file_bytes = hex_to_bytes(chunk)
+                decrypted_file.write(file_bytes)
+                processed_size += len(chunk)
+                progress['value'] = (processed_size / file_size) * 100
+                root.update_idletasks()
     
     elapsed_time = time.time() - start_time
-    progress['value'] = 100
-    time_remaining.set(f"Time remaining: {elapsed_time:.2f} seconds")
+    time_remaining.set(f"Time elapsed: {elapsed_time:.2f} seconds")
     messagebox.showinfo("Done", "File decrypted successfully!")
 
 def select_file(operation, progress, time_remaining):
@@ -61,10 +67,14 @@ def select_file(operation, progress, time_remaining):
     if file_path:
         progress['value'] = 0
         time_remaining.set("Time remaining: calculating...")
-        if operation == 'encrypt':
-            encrypt_file(file_path, progress, time_remaining)
-        elif operation == 'decrypt':
-            decrypt_file(file_path, progress, time_remaining)
+        thread = threading.Thread(target=process_file, args=(file_path, operation, progress, time_remaining))
+        thread.start()
+
+def process_file(file_path, operation, progress, time_remaining):
+    if operation == 'encrypt':
+        encrypt_file(file_path, progress, time_remaining)
+    elif operation == 'decrypt':
+        decrypt_file(file_path, progress, time_remaining)
 
 # Create the main window
 root = tk.Tk()
